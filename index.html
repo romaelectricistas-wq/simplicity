@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Roma App — Gestión Profesional</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root {
   --bg: #080c14;
@@ -407,7 +406,7 @@ canvas.sig {
 }
 
 /* PRINT WRAPPERS — off screen */
-.pw {
+#print-area {
   position: absolute;
   left: -9999px;
   top: 0;
@@ -417,7 +416,7 @@ canvas.sig {
   padding: 40px;
   font-size: 10.5pt;
   line-height: 1.5;
-  font-family: 'DM Sans', sans-serif;
+  font-family: Arial, sans-serif;
 }
 .pw h1, .pw h2, .pw h3, .pw p, .pw td, .pw th, .pw span, .pw div { color: #000 !important; }
 .pw-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #000; padding-bottom: 14px; margin-bottom: 22px; }
@@ -441,6 +440,26 @@ canvas.sig {
 .pw-sig-name { font-size: 9pt; color: #555 !important; }
 .pw-sig-title { font-weight: 700; font-size: 10pt; margin-top: 4px; }
 </style>
+
+<style id="print-css">
+@media print {
+  body > *:not(#print-area) { display: none !important; }
+  #print-area {
+    display: block !important;
+    position: static !important;
+    left: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  #print-area * { color: #000 !important; }
+  .no-print { display: none !important; }
+  @page { margin: 15mm; size: A4; }
+}
+</style>
+
 </head>
 <body>
 
@@ -745,16 +764,14 @@ canvas.sig {
 <!-- PDF MODAL -->
 <div id="pdfModal">
   <div class="pdf-toolbar">
-    <button class="btn-dl" onclick="descargarPDF()">⬇ DESCARGAR PDF</button>
+    <button class="btn-dl" onclick="imprimirPDF()">🖨 IMPRIMIR / GUARDAR PDF</button>
     <button class="btn-cl" onclick="cerrarModal()">✕ CERRAR</button>
   </div>
   <div id="pdfPreview"></div>
 </div>
 
-<!-- PRINT WRAPPERS -->
-<div id="pw-presupuesto" class="pw"></div>
-<div id="pw-memoria" class="pw"></div>
-<div id="pw-garantia" class="pw"></div>
+<!-- PRINT WRAPPER -->
+<div id="print-area"></div>
 
 <script>
 // ===================== STORAGE =====================
@@ -996,6 +1013,7 @@ function armarPresupuesto() {
   var sigCliHTML = sigCliSrc ? '<img src="' + sigCliSrc + '">' : '<div class="pw-sig-line"></div>';
 
   var html =
+    '<style>body { font-family: Arial, sans-serif; color: #000; font-size: 10.5pt; }* { box-sizing: border-box; }.pw-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #000; padding-bottom: 14px; margin-bottom: 22px; }.pw-header h1 { font-size: 20pt; font-weight: 800; margin: 0; color: #000; }.pw-header h2 { font-size: 13pt; font-weight: 700; margin: 0; text-align: right; color: #000; }.pw-header p { font-size: 9pt; color: #555; margin-top: 4px; }.pw-section { background: #f8f9fb; border: 1px solid #dde3ec; border-radius: 6px; padding: 14px; margin-bottom: 18px; }.pw-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }.pw-label { font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; color: #666; font-weight: 600; margin-bottom: 3px; }.pw-value { font-size: 11pt; font-weight: 600; color: #000; }table { width: 100%; border-collapse: collapse; margin: 12px 0; }th { background: #f0f3f8; padding: 9px 12px; text-align: left; font-size: 9pt; border: 1px solid #dde3ec; font-weight: 700; color: #000; }td { padding: 10px 12px; border: 1px solid #dde3ec; vertical-align: top; font-size: 10pt; color: #000; }.pw-total-box { float: right; width: 300px; background: #f8f9fb; border: 2px solid #000; border-radius: 8px; padding: 14px; margin-top: 10px; }.pw-total-label { font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; color: #666; }.pw-total-value { font-size: 18pt; font-weight: 800; background: #fef3cd; padding: 4px 10px; border-radius: 4px; display: inline-block; margin-top: 4px; color: #000; }.pw-sigs { display: flex; justify-content: space-around; margin-top: 50px; }.pw-sig { text-align: center; width: 210px; }.pw-sig img { max-width: 100%; height: 70px; border-bottom: 1px solid #000; margin-bottom: 6px; display: block; margin: 0 auto 6px; }.pw-sig-line { height: 70px; border-bottom: 1px solid #000; margin-bottom: 6px; }.pw-sig-title { font-weight: 700; font-size: 10pt; margin-top: 4px; color: #000; }.pw-sig-name { font-size: 9pt; color: #555; }.clearfix::after { content: \'\'; display: table; clear: both; }</style>' +
     '<div class="pw-header">' +
       '<div><h1>' + (document.getElementById('my-name').value || 'Roma') + '</h1><p>Tel: ' + (document.getElementById('my-phone').value || '') + '</p></div>' +
       '<div><h2>PRESUPUESTO TÉCNICO</h2><p>' + fecha + '</p></div>' +
@@ -1048,7 +1066,8 @@ function armarPresupuesto() {
 // ===================== ARMAR HTML MEMORIA =====================
 function armarMemoria() {
   var fecha = new Date().toLocaleDateString('es-AR');
-  return '<div class="pw-header">' +
+  return '<style>body{font-family:Arial,sans-serif;color:#000;font-size:10.5pt;}*{box-sizing:border-box;}.pw-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:22px;}.pw-header h1{font-size:20pt;font-weight:800;margin:0;color:#000;}.pw-header h2{font-size:13pt;font-weight:700;margin:0;text-align:right;color:#000;}.pw-header p{font-size:9pt;color:#555;margin-top:4px;}.pw-section{background:#f8f9fb;border:1px solid #dde3ec;border-radius:6px;padding:14px;margin-bottom:18px;}.pw-grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}.pw-label{font-size:8pt;text-transform:uppercase;letter-spacing:1px;color:#666;font-weight:600;margin-bottom:3px;}.pw-value{font-size:11pt;font-weight:600;color:#000;}table{width:100%;border-collapse:collapse;margin:12px 0;}th{background:#f0f3f8;padding:9px 12px;text-align:left;font-size:9pt;border:1px solid #dde3ec;font-weight:700;color:#000;}td{padding:10px 12px;border:1px solid #dde3ec;vertical-align:top;font-size:10pt;color:#000;}.pw-total-box{float:right;width:300px;background:#f8f9fb;border:2px solid #000;border-radius:8px;padding:14px;margin-top:10px;}.pw-total-label{font-size:9pt;text-transform:uppercase;letter-spacing:1px;color:#666;}.pw-total-value{font-size:18pt;font-weight:800;background:#fef3cd;padding:4px 10px;border-radius:4px;display:inline-block;margin-top:4px;color:#000;}.pw-sigs{display:flex;justify-content:space-around;margin-top:50px;}.pw-sig{text-align:center;width:210px;}.pw-sig img{max-width:100%;height:70px;border-bottom:1px solid #000;margin-bottom:6px;display:block;margin:0 auto 6px;}.pw-sig-line{height:70px;border-bottom:1px solid #000;margin-bottom:6px;}.pw-sig-title{font-weight:700;font-size:10pt;margin-top:4px;color:#000;}.pw-sig-name{font-size:9pt;color:#555;}</style>' +
+  '<div class="pw-header">' +
     '<div><h1>' + (document.getElementById('my-name').value || 'Roma') + '</h1><p>' + (document.getElementById('my-phone').value || '') + '</p></div>' +
     '<div><h2>MEMORIA TÉCNICA</h2><p>' + fecha + '</p></div>' +
     '</div>' +
@@ -1079,7 +1098,8 @@ function armarGarantia() {
   var fecha = new Date().toLocaleDateString('es-AR');
   var sigProSrc = localStorage.getItem('roma_sig_sig-pro') || '';
   var sigProHTML = sigProSrc ? '<img src="' + sigProSrc + '">' : '<div class="pw-sig-line"></div>';
-  return '<div style="text-align:center;border-bottom:3px solid #000;padding-bottom:18px;margin-bottom:24px;">' +
+  return '<style>body{font-family:Arial,sans-serif;color:#000;font-size:10.5pt;}*{box-sizing:border-box;}.pw-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:22px;}.pw-header h1{font-size:20pt;font-weight:800;margin:0;color:#000;}.pw-header h2{font-size:13pt;font-weight:700;margin:0;text-align:right;color:#000;}.pw-header p{font-size:9pt;color:#555;margin-top:4px;}.pw-section{background:#f8f9fb;border:1px solid #dde3ec;border-radius:6px;padding:14px;margin-bottom:18px;}.pw-grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}.pw-label{font-size:8pt;text-transform:uppercase;letter-spacing:1px;color:#666;font-weight:600;margin-bottom:3px;}.pw-value{font-size:11pt;font-weight:600;color:#000;}table{width:100%;border-collapse:collapse;margin:12px 0;}th{background:#f0f3f8;padding:9px 12px;text-align:left;font-size:9pt;border:1px solid #dde3ec;font-weight:700;color:#000;}td{padding:10px 12px;border:1px solid #dde3ec;vertical-align:top;font-size:10pt;color:#000;}.pw-total-box{float:right;width:300px;background:#f8f9fb;border:2px solid #000;border-radius:8px;padding:14px;margin-top:10px;}.pw-total-label{font-size:9pt;text-transform:uppercase;letter-spacing:1px;color:#666;}.pw-total-value{font-size:18pt;font-weight:800;background:#fef3cd;padding:4px 10px;border-radius:4px;display:inline-block;margin-top:4px;color:#000;}.pw-sigs{display:flex;justify-content:space-around;margin-top:50px;}.pw-sig{text-align:center;width:210px;}.pw-sig img{max-width:100%;height:70px;border-bottom:1px solid #000;margin-bottom:6px;display:block;margin:0 auto 6px;}.pw-sig-line{height:70px;border-bottom:1px solid #000;margin-bottom:6px;}.pw-sig-title{font-weight:700;font-size:10pt;margin-top:4px;color:#000;}.pw-sig-name{font-size:9pt;color:#555;}</style>' +
+  '<div style="text-align:center;border-bottom:3px solid #000;padding-bottom:18px;margin-bottom:24px;">' +
     '<h1 style="font-size:20pt;font-weight:800;">' + (document.getElementById('my-name').value || 'Roma') + '</h1>' +
     '<p style="color:#555;margin-top:4px;">' + (document.getElementById('my-phone').value || '') + '</p>' +
     '<h2 style="font-size:15pt;font-weight:800;margin-top:14px;letter-spacing:2px;">CERTIFICADO DE GARANTÍA DE OBRA</h2>' +
@@ -1104,76 +1124,40 @@ var pdfFilename = '';
 
 function abrirPDF(tipo) {
   var html = '';
-  var wrapperId = '';
   if (tipo === 'presupuesto') {
     html = armarPresupuesto();
-    wrapperId = 'pw-presupuesto';
-    pdfFilename = 'Presupuesto_' + (document.getElementById('cli-name').value || 'Cliente') + '.pdf';
+    pdfFilename = 'Presupuesto_' + (document.getElementById('cli-name').value || 'Cliente');
   } else if (tipo === 'memoria') {
     html = armarMemoria();
-    wrapperId = 'pw-memoria';
-    pdfFilename = 'MemoriaTecnica_' + (document.getElementById('cli-name').value || 'Cliente') + '.pdf';
+    pdfFilename = 'MemoriaTecnica_' + (document.getElementById('cli-name').value || 'Cliente');
   } else if (tipo === 'garantia') {
     html = armarGarantia();
-    wrapperId = 'pw-garantia';
-    pdfFilename = 'Garantia_' + (document.getElementById('cli-name').value || 'Cliente') + '.pdf';
+    pdfFilename = 'Garantia_' + (document.getElementById('cli-name').value || 'Cliente');
   }
 
-  pdfWrapper = document.getElementById(wrapperId);
-  pdfWrapper.innerHTML = html;
-
-  // Mostrar preview en modal
+  // Show in modal preview
   var preview = document.getElementById('pdfPreview');
-  preview.innerHTML = '';
-  var clone = pdfWrapper.cloneNode(true);
-  clone.style.position = 'static';
-  clone.style.left = '0';
-  clone.style.width = '100%';
-  clone.style.padding = '24px';
-  preview.appendChild(clone);
+  preview.innerHTML = '<div style="padding:24px;font-family:Arial,sans-serif;color:#000;background:#fff;">' + html + '</div>';
+
+  // Also set print-area
+  var pa = document.getElementById('print-area');
+  pa.innerHTML = html;
 
   document.getElementById('pdfModal').classList.add('open');
 }
 
-function descargarPDF() {
-  if (!pdfWrapper) return;
-  var dlBtn = document.querySelector('.btn-dl');
-  dlBtn.innerText = 'Generando...';
-  dlBtn.disabled = true;
-
-  pdfWrapper.style.position = 'static';
-  pdfWrapper.style.left = '0';
-
-  var opts = {
-    margin: [10, 10, 10, 10],
-    filename: pdfFilename,
-    image: { type: 'jpeg', quality: 0.97 },
-    html2canvas: { scale: 2, useCORS: true, logging: false },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-
-  html2pdf().set(opts).from(pdfWrapper).save().then(function() {
-    pdfWrapper.style.position = 'absolute';
-    pdfWrapper.style.left = '-9999px';
-    dlBtn.innerText = '⬇ DESCARGAR PDF';
-    dlBtn.disabled = false;
-  }).catch(function(err) {
-    console.error(err);
-    pdfWrapper.style.position = 'absolute';
-    pdfWrapper.style.left = '-9999px';
-    dlBtn.innerText = '⬇ DESCARGAR PDF';
-    dlBtn.disabled = false;
-    alert('Error al generar PDF. Intentá de nuevo.');
-  });
+function imprimirPDF() {
+  // Set document title for the print filename hint
+  var oldTitle = document.title;
+  document.title = pdfFilename;
+  window.print();
+  document.title = oldTitle;
 }
 
 function cerrarModal() {
   document.getElementById('pdfModal').classList.remove('open');
   document.getElementById('pdfPreview').innerHTML = '';
-  if (pdfWrapper) {
-    pdfWrapper.style.position = 'absolute';
-    pdfWrapper.style.left = '-9999px';
-  }
+  document.getElementById('print-area').innerHTML = '';
   pdfWrapper = null;
   pdfFilename = '';
 }
